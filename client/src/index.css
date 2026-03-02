@@ -1,0 +1,22 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cream-50: #faf6f0;
+  --color-cream-100: #f2ebe1;
+  --color-wheat-100: #eaddcf;
+  --color-wheat-200: #d8c3a5;
+  --color-wheat-300: #c6ac8a;
+  --color-caramel-400: #a98f6e;
+  --color-caramel-500: #8e7a5e;
+  --color-caramel-600: #6b5b4a;
+  --color-caramel-800: #4a3f35;
+  --color-brown-900: #2b251f;
+
+  --font-inter: "Inter", sans-serif;
+}
+
+body {
+  font-family: var(--font-inter);
+  background-color: var(--color-cream-50);
+  color: var(--color-brown-900);
+}
