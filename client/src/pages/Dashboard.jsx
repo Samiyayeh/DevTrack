@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { initialProjects } from "../data/mockData";
 import api from "../api";
 
 export default function Dashboard() {
@@ -75,7 +74,7 @@ export default function Dashboard() {
           {projects.map((project) => (
             <Link
               key={project.id}
-              to={`/project/${project.id}`}
+              to={`/project/${project.id}/${project.name}/${project.description}/${project.status}`}
               className="bg-cream-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200 border border-wheat-100 flex flex-col h-full"
             >
               <div className="flex-1">

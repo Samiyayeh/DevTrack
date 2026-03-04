@@ -1,73 +1,77 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { initialProjects } from "../data/mockData";
 import api from "../api";
 
 export default function ProjectDetails() {
-  const { id } = useParams();
-  const [project, setProject] = useState(null);
+  const { id, name, description, status } = useParams();
+  const [task, newtask] = useState(null);
   const [newTaskText, setNewTaskText] = useState("");
 
   useEffect(() => {
-    // TODO: Replace with API fetch call (`GET /api/projects/${id}`)
-      const fetchProject = async () => {
+    // TODO: Replace with API fetch call (`GET /api/tasks/${id}`)
+      const fetchTask = async () => {
         try {
           const response = await api.get(`/tasks/getallTasks/${id}`);
           console.log(response.data);
-          setProject(response.data);
+          newtask(response.data);
         } catch (error) {
-          console.error('Error fetching project:', error);
+          console.error('Error fetching task:', error);
         }
       }
-      fetchProject();
+      fetchTask();
   }, [id]);
 
-  const handleAddTask = (e) => {
+  const handleAddTask = async (e) => {
     e.preventDefault();
-    if (!newTaskText.trim() || !project) return;
-    // TODO: Replace with API fetch call (`POST /api/projects/${id}/tasks`)
+    if (!newTaskText.trim() || !task) return;
+    // TODO: Replace with API fetch call (`POST /api/tasks/${id}`)
     const newTask = {
-      id: Date.now().toString(),
       name: newTaskText,
       status: 'pending',
     };
 
-    setProject([...project, newTask]);
-    setNewTaskText("");
-  };
-
-  const toggleTaskCompletion = (taskId) => {
-    if (!project) return;
-    // TODO: Replace with API fetch call (`PUT /api/tasks/${taskId}`)
-
-    const updateStatus = async () => {
-      try {
-        const response = await api.put(`/tasks/status/${taskId}`,{
-          status: 'completed'
-        });
-        console.log(response.data);
-        setProject(...tasks.map(task => task.id === taskId ? {...task, status: 'completed'} : task), response.data);
-      } catch (error) {
-        console.error('Error updating task status:', error);
-      }
+    try {
+      const response = await api.post(`/tasks/${id}`, newTask, { projectId: id });
+      console.log(response.data);
+      newtask([...task, response.data]);
+      setNewTaskText("");
+    } catch (error) {
+      console.error('Error adding task:', error);
     }
-
-
-   
-    
-    updateStatus();
   };
 
-  if (!project) {
+  const toggleTaskCompletion = async (taskId, currentStatus) => {
+  try {
+    // 1. Toggle the status string
+    const newStatus = currentStatus === 'completed' ? 'pending' : 'completed';
+
+    // 2. Tell the Backend (MySQL)
+    const response = await api.put(`/tasks/status/${taskId}`, {
+      status: newStatus
+    });
+
+    // 3. Update the Frontend State (the array)
+    newtask(prevTasks => 
+      prevTasks.map(t => 
+        t.id === taskId ? { ...t, status: newStatus } : t
+      )
+    );
+    
+  } catch (error) {
+    console.error('Error updating task status:', error);
+  }
+};
+
+  if (!task) {
     return (
       <div className="min-h-screen bg-cream-50 flex items-center justify-center text-caramel-600 font-inter text-xl">
-        Loading project details...
+        Loading task details...
       </div>
     );
   }
 
-  const completedCount = project.filter(t => t.status === 'completed').length;
-  const totalCount = project.length;
+  const completedCount = task.filter(t => t.status === 'completed').length;
+  const totalCount = task.length;
   const progressPercentage = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
 
   return (
@@ -79,15 +83,15 @@ export default function ProjectDetails() {
           &larr; Back to Dashboard
         </Link>
         
-        {/* Project Header Card */}
+        {/* Task Header Card */}
         <div className="bg-cream-100 rounded-3xl p-8 shadow-sm border border-wheat-100">
           <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-brown-900 mb-3">{project.title}</h1>
-              <p className="text-caramel-800 text-lg max-w-2xl leading-relaxed">{project.description}</p>
+              <h1 className="text-3xl font-bold text-brown-900 mb-3">{name}</h1>
+              <p className="text-caramel-800 text-lg max-w-2xl leading-relaxed">{description}</p>
             </div>
-            <span className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap ${project.status === 'Completed' ? 'bg-wheat-300 text-brown-900' : 'bg-wheat-200 text-caramel-800'}`}>
-              {project.status}
+            <span className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap ${status === 'Completed' ? 'bg-wheat-300 text-brown-900' : 'bg-wheat-200 text-caramel-800'}`}>
+              {status}
             </span>
           </div>
 
@@ -117,34 +121,34 @@ export default function ProjectDetails() {
           </div>
           
           <div className="space-y-4 mb-8">
-            {project.length === 0 ? (
+            {task.length === 0 ? (
               <div className="text-center py-10 bg-cream-50 rounded-2xl border border-dashed border-wheat-300">
                 <p className="text-caramel-600 font-medium text-lg">No tasks yet.</p>
                 <p className="text-caramel-400 text-sm mt-1">Add your first task below to get started.</p>
               </div>
             ) : (
-              project.map(task => (
+              task.map(t => (
                 <div 
-                  key={task.id} 
-                  className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all duration-200 group ${task.completed ? 'bg-cream-50 border-wheat-100' : 'bg-white border-wheat-100 hover:border-wheat-300 hover:shadow-sm'}`}
+                  key={t.id} 
+                  className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all duration-200 group ${t.completed ? 'bg-cream-50 border-wheat-100' : 'bg-white border-wheat-100 hover:border-wheat-300 hover:shadow-sm'}`}
                 >
                   <label className="flex items-center cursor-pointer relative shrink-0">
                     <input 
                       type="checkbox" 
                       className="peer sr-only"
-                      checked={task.status === 'completed'}
-                      onChange={() => toggleTaskCompletion(task.id)}
+                      checked={t.status === 'completed'}
+                      onChange={() => toggleTaskCompletion(t.id, t.status)}
                     />
-                    <div className={`w-7 h-7 rounded-md border-2 flex items-center justify-center transition-colors ${task.status === 'completed' ? 'bg-caramel-500 border-caramel-500' : 'border-wheat-300 bg-white group-hover:border-caramel-400'}`}>
-                      {task.status === 'completed' && (
+                    <div className={`w-7 h-7 rounded-md border-2 flex items-center justify-center transition-colors ${t.status === 'completed' ? 'bg-caramel-500 border-caramel-500' : 'border-wheat-300 bg-white group-hover:border-caramel-400'}`}>
+                      {t.status === 'completed' && (
                         <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                         </svg>
                       )}
                     </div>
                   </label>
-                  <span className={`text-[17px] font-medium transition-colors ${task.status === 'completed' ? 'line-through text-caramel-400' : 'text-brown-900'}`}>
-                    {task.name}
+                  <span className={`text-[17px] font-medium transition-colors ${t.status === 'completed' ? 'line-through text-caramel-400' : 'text-brown-900'}`}>
+                    {t.name}
                   </span>
                 </div>
               ))
