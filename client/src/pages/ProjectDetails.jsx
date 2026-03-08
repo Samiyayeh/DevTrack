@@ -6,6 +6,8 @@ export default function ProjectDetails() {
   const { id, name, description, status } = useParams();
   const [task, newtask] = useState(null);
   const [newTaskText, setNewTaskText] = useState("");
+  const [editingTaskId, setEditingTaskId] = useState(null);
+  const [editingTaskName, setEditingTaskName] = useState("");
 
   useEffect(() => {
     // TODO: Replace with API fetch call (`GET /api/tasks/${id}`)
@@ -41,26 +43,47 @@ export default function ProjectDetails() {
   };
 
   const toggleTaskCompletion = async (taskId, currentStatus) => {
-  try {
-    // 1. Toggle the status string
-    const newStatus = currentStatus === 'completed' ? 'pending' : 'completed';
+    try {
+      // 1. Toggle the status string
+      const newStatus = currentStatus === 'completed' ? 'pending' : 'completed';
 
-    // 2. Tell the Backend (MySQL)
-    const response = await api.put(`/tasks/status/${taskId}`, {
-      status: newStatus
-    });
+      // 2. Update the Frontend State (the array)
+      newtask(prevTasks => 
+        prevTasks.map(t => 
+          t.id === taskId ? { ...t, status: newStatus } : t
+        )
+      );
+      
+    } catch (error) {
+      console.error('Error updating task status:', error);
+    }
+  };
 
-    // 3. Update the Frontend State (the array)
-    newtask(prevTasks => 
-      prevTasks.map(t => 
-        t.id === taskId ? { ...t, status: newStatus } : t
-      )
-    );
-    
-  } catch (error) {
-    console.error('Error updating task status:', error);
-  }
-};
+  const handleDeleteTask = async (taskId) => {
+    try {
+      await api.delete(`/tasks/${taskId}`);
+      newtask(task.filter(t => t.id !== taskId));
+    } catch (error) {
+      console.error('Error deleting task:', error);
+    }
+  };
+
+  const startEditTask = (t) => {
+    setEditingTaskId(t.id);
+    setEditingTaskName(t.name);
+  };
+
+  const saveEditTask = (taskId) => {
+    if (!editingTaskName.trim()) return;
+    newtask(task.map(t => t.id === taskId ? { ...t, name: editingTaskName } : t));
+    setEditingTaskId(null);
+    setEditingTaskName("");
+  };
+
+  const cancelEditTask = () => {
+    setEditingTaskId(null);
+    setEditingTaskName("");
+  };
 
   if (!task) {
     return (
@@ -130,7 +153,7 @@ export default function ProjectDetails() {
               task.map(t => (
                 <div 
                   key={t.id} 
-                  className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all duration-200 group ${t.completed ? 'bg-cream-50 border-wheat-100' : 'bg-white border-wheat-100 hover:border-wheat-300 hover:shadow-sm'}`}
+                  className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all duration-200 group ${t.status === 'completed' ? 'bg-cream-50 border-wheat-100' : 'bg-white border-wheat-100 hover:border-wheat-300 hover:shadow-sm'}`}
                 >
                   <label className="flex items-center cursor-pointer relative shrink-0">
                     <input 
@@ -147,9 +170,46 @@ export default function ProjectDetails() {
                       )}
                     </div>
                   </label>
-                  <span className={`text-[17px] font-medium transition-colors ${t.status === 'completed' ? 'line-through text-caramel-400' : 'text-brown-900'}`}>
-                    {t.name}
-                  </span>
+
+                  {editingTaskId === t.id ? (
+                    <div className="flex-1 flex gap-2">
+                      <input 
+                        type="text" 
+                        value={editingTaskName} 
+                        onChange={(e) => setEditingTaskName(e.target.value)}
+                        className="flex-1 bg-white border border-wheat-300 text-brown-900 px-3 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-caramel-400"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') saveEditTask(t.id);
+                          if (e.key === 'Escape') cancelEditTask();
+                        }}
+                      />
+                      <button onClick={() => saveEditTask(t.id)} className="px-3 py-1.5 bg-caramel-500 text-white rounded-lg text-sm font-medium hover:bg-caramel-600 transition-colors">Save</button>
+                      <button onClick={cancelEditTask} className="px-3 py-1.5 bg-wheat-200 text-caramel-700 rounded-lg text-sm font-medium hover:bg-wheat-300 transition-colors">Cancel</button>
+                    </div>
+                  ) : (
+                    <>
+                      <span className={`flex-1 text-[17px] font-medium transition-colors ${t.status === 'completed' ? 'line-through text-caramel-400' : 'text-brown-900'}`}>
+                        {t.name}
+                      </span>
+                      <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={() => startEditTask(t)}
+                          className="p-1.5 bg-wheat-100 text-blue-600 hover:bg-wheat-200 rounded-md transition-colors"
+                          title="Edit Task"
+                        >
+                          ✎
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteTask(t.id)}
+                          className="p-1.5 bg-wheat-100 text-red-600 hover:bg-wheat-200 rounded-md transition-colors"
+                          title="Delete Task"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               ))
             )}

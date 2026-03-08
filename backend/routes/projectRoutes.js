@@ -55,17 +55,69 @@ router.delete('/:id', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
     try {
-        const updatedProject = await Project.update({
-            name: req.body.name,
-            description: req.body.description
-        }, {
-            where: { id: req.params.id }
+        // 1. Perform the update
+        const [affectedRows] = await Project.update(
+            {
+                name: req.body.name,
+                description: req.body.description
+            }, 
+            {
+                where: { id: req.params.id }
+            }
+        );
+
+        // 2. Check if anything was actually updated
+        if (affectedRows === 0) {
+            return res.status(404).json({ error: "Project not found" });
+        }
+
+        // 3. Send a single cohesive object back
+        res.status(200).json({ 
+            message: "Project updated successfully",
+            data: {
+                id: req.params.id,
+                name: req.body.name,
+                description: req.body.description
+            }
         });
-        res.status(201).json({ message: "Project updated successfully" }, updatedProject);
+
     } catch (error) {
+        console.error(error); // Always helpful for debugging!
         res.status(500).json({ error: "Update failed" });
     }
-})
+});
+
+router.put('/:id/status', async (req, res) => {
+    try {
+        // 1. Perform the update
+        const [affectedRows] = await Project.update(
+            {
+                status: req.body.status
+            }, 
+            {
+                where: { id: req.params.id }
+            }
+        );
+
+        // 2. Check if anything was actually updated
+        if (affectedRows === 0) {
+            return res.status(404).json({ error: "Project not found" });
+        }
+
+        // 3. Send a single cohesive object back
+        res.status(200).json({ 
+            message: "Project updated successfully",
+            data: {
+                id: req.params.id,
+                status: req.body.status
+            }
+        });
+
+    } catch (error) {
+        console.error(error); // Always helpful for debugging!
+        res.status(500).json({ error: "Update failed" });
+    }
+});
 
 
 
