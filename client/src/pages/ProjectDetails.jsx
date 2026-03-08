@@ -73,11 +73,18 @@ export default function ProjectDetails() {
     setEditingTaskName(t.name);
   };
 
-  const saveEditTask = (taskId) => {
+  const saveEditTask = async (taskId) => {
     if (!editingTaskName.trim()) return;
-    newtask(task.map(t => t.id === taskId ? { ...t, name: editingTaskName } : t));
-    setEditingTaskId(null);
-    setEditingTaskName("");
+    try {
+      const response = await api.put(`/tasks/${taskId}`, { name: editingTaskName });
+      if (response.status === 201) {
+        newtask(task.map(t => t.id === taskId ? { ...t, name: editingTaskName } : t));
+        setEditingTaskId(null);
+        setEditingTaskName("");
+      }
+    } catch (error) {
+      console.error('Error updating task:', error);
+    }
   };
 
   const cancelEditTask = () => {

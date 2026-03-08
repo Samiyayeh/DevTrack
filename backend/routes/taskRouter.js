@@ -15,7 +15,6 @@ router.get('/:id', async (req, res) => {
     }
 })
 
-
 router.get('/getallTasks/:id', async (req, res) => {
     try {
         const tasks = await Task.findAll({ where: { projectId: req.params.id } });
